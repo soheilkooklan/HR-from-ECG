@@ -1,51 +1,36 @@
-# HR-from-ECG
-🫀ECG Heart Rate Analyzer
+# Version 1 (archived)
 
-![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+The original `HR-from-ECG`, released in 2023. Kept here unchanged so that the
+two versions can be compared directly; it is no longer maintained.
 
- A user-friendly Python application has been developed to analyze Electrocardiogram (ECG/EKG) data and calculate heart rate. This Python code is designed for amateur users and features an easy-to-use graphical interface (GUI) for loading ECG data, calculating heart rate, and visualizing ECG signals with R-peaks. It is ideal for individuals who are learning to work with ECG data.
+## What it did
 
-## Features
+A single-file Tkinter tool: load a CSV, run `scipy.signal.find_peaks`, print an
+average heart rate.
 
-- **Import ECG Data**: Import ECG data from a CSV file for analysis. The noisy signal is accepted, and simple noise reduction is performed in the code.
-- **Heart Rate Calculation**: Automatically detect R-peaks in the ECG signal and calculate heart rate in beats per minute (bpm).
-- **ECG Visualization**: View the ECG signal and see R-peaks plotted on the graph.
-- **Graphical User Interface (GUI)**: An easy-to-use interface built with `tkinter` that allows users to interact with the tool without needing to code.
-- **Help Feature**: A built-in help button explains how to load data, analyze it, and use the interface.
+## Why it was replaced
 
-## Screenshots
+Reviewing it before starting version 2 turned up several problems worth
+recording, because each of them motivated a specific part of the new design.
 
-![ECG Heart Rate Analyzer GUI](HR%20from%20ECG%20GUI.jpg)
-![ECG Heart Rate Analyzer With Sample ECG](HR%20from%20Sample%20ECG%20.jpg)
+| Issue | Detail |
+|---|---|
+| No filtering | The README claimed "simple noise reduction"; the code contains none. The raw signal goes straight into `find_peaks`. |
+| Hard-coded sampling rate | `sampling_rate = 500` regardless of the file. On a 360 Hz MIT-BIH record every reported heart rate is wrong by 39 %. |
+| No adaptive threshold | A single fixed `distance` parameter and no amplitude threshold, so the detector fails on any amplitude drift. |
+| No artefact handling | No refractory logic, no ectopic-beat handling, no signal-quality check. |
+| No uncertainty | A number is printed for any input, including a flat line. |
+| No validation | No dataset, no metrics, no comparison against any reference. |
 
-## License
-- This project is licensed under the MIT License. See the LICENSE file for details.
-- This project was inspired by tutorials on working with ECG data in Python. Thanks to the Python community and scientific libraries like `numpy`, `scipy`, `tkinter`, and `matplotlib` for making such projects possible.
+The last two are the ones that shaped version 2. An estimator that reports a
+confident number for an unusable signal is not merely inaccurate — it is
+misleading in a way the user cannot detect.
 
-## Getting Started
-
-### ECG Data Format
-The application expects the ECG data to be in a CSV file with a single column named ECG. Here's an example of how the data should look:
-| ECG  |
-| ------------- | 
-| 0.1 | 
-| 0.2 |
-| 0.3 | 
-| ... | 
-
-### Prerequisites
-
-To run this application, you need to have the following libraries installed:
-
-- `numpy`
-- `pandas`
-- `scipy`
-- `matplotlib`
-- `tkinter` (pre-installed with most Python version)
-
-You can install the required libraries using:
+## Running it
 
 ```bash
-pip install numpy pandas scipy matplotlib
-py -m pip install numpy pandas scipy matplotlib
+python legacy/hr_from_ecg_v1.py
+```
+
+Requires `numpy`, `scipy`, `matplotlib` and `tkinter`. Expects a CSV with a
+column named `ECG` sampled at 500 Hz.
