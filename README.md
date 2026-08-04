@@ -4,6 +4,7 @@ Quality-aware, uncertainty-calibrated heart-rate and HRV estimation from single-
 
 **Version 2.** Version 1 loaded a CSV, called `scipy.find_peaks`, and printed a number — for any input, including a flat line. This version reports **every quantity as an interval with a distribution-free coverage guarantee**, learns a signal-quality score defined by downstream error rather than by waveform appearance, and **abstains** where the signal cannot support an answer.
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21788946.svg)](https://doi.org/10.5281/zenodo.21788946)
 [![License: PolyForm NC](https://img.shields.io/badge/License-PolyForm%20Noncommercial-orange.svg)](LICENSE)
 [![Research use only](https://img.shields.io/badge/use-research%20only%20%C2%B7%20not%20a%20medical%20device-red.svg)](NOTICE.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
