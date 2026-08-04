@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+title: >-
+  HR from ECG: quality-aware, uncertainty-calibrated heart rate
+  and HRV estimation from single-lead ECG
+message: If you use this software, please cite it as below.
+type: software
+authors:
+  - given-names: Soheil
+    family-names: Kooklan
+    orcid: 'https://orcid.org/0009-0003-5035-7833'
+    affiliation: 'Science and Research Branch, Islamic Azad University (SRBIAU), Tehran, Iran'
+repository-code: 'https://github.com/soheilkooklan/HR-from-ECG'
+abstract: >-
+  HR from ECG estimates heart rate and heart-rate variability from noisy
+  single-lead ECG and reports every quantity as an interval rather than a point
+  value. It combines a utility-based signal quality index, defined by how much a
+  segment degrades the downstream heart-rate estimate rather than by how the
+  waveform looks, with a convolutional network whose bottleneck is a
+  bidirectional selective state-space model and whose training objective
+  includes a differentiable pseudo-periodicity prior. Heart-rate intervals carry
+  a distribution-free coverage guarantee through Mondrian conformal prediction
+  conditioned on predicted quality, and beat-level uncertainty is propagated to
+  HRV indices by conformalised Monte-Carlo ensembles. The system abstains on
+  segments that cannot support an estimate.
+keywords:
+  - electrocardiography
+  - heart rate variability
+  - conformal prediction
+  - uncertainty quantification
+  - signal quality
+  - state space models
+  - biomedical signal processing
+license: PolyForm-Noncommercial-1.0.0
+version: 2.0.0
