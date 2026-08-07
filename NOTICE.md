@@ -63,3 +63,17 @@ Please cite them if you reproduce the benchmark:
   *Computers in Cardiology* 11:381-384 (1984).
 - Goldberger AL, et al. PhysioBank, PhysioToolkit, and PhysioNet.
   *Circulation* 101(23):e215-e220 (2000).
+  
+## Use of AI in developing this project
+
+Parts of this project were developed with the assistance of AI tools:
+
+- **Documentation**: portions of the written guides and technical
+  explanations were edited with AI assistance.
+
+- **Interface**: parts of the application's layout and in-app text were
+  designed with AI assistance.
+
+Final responsibility for this project, including the correctness of the
+code, the accuracy of the documentation, and any use of this software, rests entirely with the author. The use of AI tools during
+development does not reduce that responsibility.
