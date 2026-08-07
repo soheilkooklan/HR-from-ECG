@@ -2,7 +2,7 @@
 
 Quality-aware, uncertainty-calibrated heart-rate and HRV estimation from single-lead ECG.
 
-**Version 2.** Version 1 loaded a CSV, called `scipy.find_peaks`, and printed a number — for any input, including a flat line. This version reports **every quantity as an interval with a distribution-free coverage guarantee**, learns a signal-quality score defined by downstream error rather than by waveform appearance, and **abstains** where the signal cannot support an answer.
+**Version 2.** Version 1 loaded a CSV, called `scipy.find_peaks`, and printed a number — for any input, including a flat line. This version reports **every quantity as an interval with a distribution-free coverage guarantee**, learns a signal-quality score defined by downstream error rather than by waveform appearance, and **abstains** where the signal cannot support an answer. Parts of this project's UI and documentation were developed with AI assistance; see [NOTICE](https://github.com/soheilkooklan/HR-from-ECG/blob/5827c54f4302fe87e070e41cc0a0bee0f4587f7c/NOTICE.md) for details.
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21788946.svg)](https://doi.org/10.5281/zenodo.21788946)
 [![License: PolyForm NC](https://img.shields.io/badge/License-PolyForm%20Noncommercial-orange.svg)](LICENSE)
@@ -239,6 +239,231 @@ requires a separate written licence from the author.
 See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).
 
 **Not a medical device.** This software is a research tool. It is not certified,
+
+# References
+
+Every method, model and dataset this project builds on, organised by the part
+of the codebase that uses it. This list exists so that a claim in the code or
+in `DESIGN_NOTES.md` can always be traced back to where it came from.
+
+Entries are grouped to match the package layout (`hrecg/simulation`,
+`hrecg/models`, `hrecg/conformal`, `hrecg/metrics`, data). Within each group,
+entries are in the order they are first relevant.
+
+---
+
+## Datasets
+
+**MIT-BIH Arrhythmia Database.**
+Moody GB, Mark RG. The impact of the MIT-BIH Arrhythmia Database.
+*IEEE Engineering in Medicine and Biology Magazine*. 2001;20(3):45–50.
+DOI: [10.1109/51.932724](https://doi.org/10.1109/51.932724)
+Data: [physionet.org/content/mitdb/1.0.0](https://physionet.org/content/mitdb/1.0.0/)
+
+**MIT-BIH Noise Stress Test Database.**
+Moody GB, Muldrow WE, Mark RG. A noise stress test for arrhythmia detectors.
+*Computers in Cardiology*. 1984;11:381–384.
+Data: [physionet.org/content/nstdb/1.0.0](https://physionet.org/content/nstdb/1.0.0/)
+
+**PhysioNet / PhysioBank / PhysioToolkit** (the hosting platform and `wfdb`
+tooling used to read both databases above).
+Goldberger AL, Amaral LAN, Glass L, Hausdorff JM, Ivanov PCh, Mark RG, Mietus JE,
+Moody GB, Peng CK, Stanley HE. PhysioBank, PhysioToolkit, and PhysioNet:
+components of a new research resource for complex physiologic signals.
+*Circulation*. 2000;101(23):e215–e220.
+DOI: [10.1161/01.CIR.101.23.e215](https://doi.org/10.1161/01.CIR.101.23.e215)
+
+---
+
+## `hrecg/simulation` — ECG and artefact synthesis
+
+**Phase-domain dynamical ECG model** (`ecgsyn.py`, `rhythm.py`). The basis of
+the waveform synthesiser; the rate-dependent QRS width and Bazett QT scaling
+in this repository are extensions of the original model.
+McSharry PE, Clifford GD, Tarassenko L, Smith LA. A dynamical model for
+generating synthetic electrocardiogram signals.
+*IEEE Transactions on Biomedical Engineering*. 2003;50(3):289–294.
+DOI: [10.1109/TBME.2003.808805](https://doi.org/10.1109/TBME.2003.808805)
+
+**Bazett's QT correction** (used in `ecgsyn.py` to scale T-wave position with
+the square root of RR).
+Bazett HC. An analysis of the time-relations of electrocardiograms.
+*Heart*. 1920;7:353–370. (Reprinted with commentary in
+*Annals of Noninvasive Electrocardiology*. 1997;2(2):177–194,
+DOI: [10.1111/j.1542-474X.1997.tb00325.x](https://doi.org/10.1111/j.1542-474X.1997.tb00325.x))
+
+**Noise Stress Test methodology** (`noise.py`, SNR-calibrated corruption).
+Moody, Muldrow & Mark 1984 — see Datasets above.
+
+---
+
+## `hrecg/models` — network architecture and training
+
+**Selective state space models / Mamba** (`ssm.py`, the bidirectional
+bottleneck of the network). This repository re-implements the recurrence with
+a portable associative scan rather than depending on the authors' CUDA kernel;
+see `DESIGN_NOTES.md` §3 for why.
+Gu A, Dao T. Mamba: linear-time sequence modeling with selective state spaces.
+Presented at COLM 2024.
+arXiv: [2312.00752](https://arxiv.org/abs/2312.00752)
+
+**Structured state space models (S4/S5), the line of work Mamba extends**
+(background for `ssm.py`).
+Smith JTH, Warrington A, Linderman SW. Simplified state space layers for
+sequence modeling. *International Conference on Learning Representations
+(ICLR)* 2023.
+arXiv: [2208.04933](https://arxiv.org/abs/2208.04933)
+
+**Parallel prefix-sum / associative scan algorithm** (`associative_scan` in
+`ssm.py`, the Hillis–Steele formulation used to parallelise the recurrence).
+Blelloch GE. Prefix sums and their applications. Technical Report
+CMU-CS-90-190, School of Computer Science, Carnegie Mellon University, 1990.
+[Report PDF](https://www.cs.cmu.edu/~guyb/papers/Ble93.pdf)
+
+---
+
+## `hrecg/baselines` — the classical reference detector
+
+**Pan–Tompkins QRS detector** (`pan_tompkins.py`), re-implemented in full
+rather than imported, so the baseline comparison does not depend on an
+unspecified third-party variant.
+Pan J, Tompkins WJ. A real-time QRS detection algorithm.
+*IEEE Transactions on Biomedical Engineering*. 1985;32(3):230–236.
+DOI: [10.1109/TBME.1985.325532](https://doi.org/10.1109/TBME.1985.325532)
+
+---
+
+## `hrecg/conformal` — distribution-free uncertainty
+
+**Conformal prediction, foundational theory** (`hr_interval.py`, the
+finite-sample quantile correction and the split/Mondrian constructions).
+Vovk V, Gammerman A, Shafer G. *Algorithmic Learning in a Random World*.
+Springer, 2005. DOI: [10.1007/b106715](https://doi.org/10.1007/b106715)
+
+**Distribution-free predictive inference / split conformal regression**
+(the split-conformal baseline `ConformalHR` is compared against).
+Lei J, G'Sell M, Rinaldo A, Tibshirani RJ, Wasserman L. Distribution-free
+predictive inference for regression.
+*Journal of the American Statistical Association*. 2018;113(523):1094–1111.
+DOI: [10.1080/01621459.2017.1307116](https://doi.org/10.1080/01621459.2017.1307116)
+
+**Conformalised quantile regression** (motivates using the model's own
+predicted quantiles as the nonconformity score, rather than a raw residual).
+Romano Y, Patterson E, Candès E. Conformalized quantile regression.
+*Advances in Neural Information Processing Systems (NeurIPS)* 2019;32.
+arXiv: [1905.03222](https://arxiv.org/abs/1905.03222)
+
+**A tutorial introduction to conformal prediction** (general reference for
+the exposition in `DESIGN_NOTES.md`).
+Angelopoulos AN, Bates S. A gentle introduction to conformal prediction and
+distribution-free uncertainty quantification. 2021.
+arXiv: [2107.07511](https://arxiv.org/abs/2107.07511)
+
+**Conformal risk control** (theoretical basis for `SelectiveController`, the
+abstention mechanism with a guaranteed risk bound).
+Angelopoulos AN, Bates S, Candès EJ, Jordan MI, Lei L. Conformal risk control.
+2021. arXiv: [2110.01052](https://arxiv.org/abs/2110.01052)
+
+**Selective prediction / the reject option, and the risk–coverage curve**
+(`risk_coverage_curve`, `aurc` in `metrics/uncertainty.py`).
+El-Yaniv R, Wiener Y. On the foundations of noise-free selective
+classification. *Journal of Machine Learning Research*. 2010;11:1605–1641.
+[Paper PDF](https://www.jmlr.org/papers/volume11/el-yaniv10a/el-yaniv10a.pdf)
+
+**The Winkler interval score** (`winkler_score` in `metrics/uncertainty.py`,
+the proper scoring rule used to compare interval quality without being gamed
+by interval width alone).
+Winkler RL. A decision-theoretic approach to interval estimation.
+*Journal of the American Statistical Association*. 1972;67(337):187–191.
+DOI: [10.1080/01621459.1972.10481224](https://doi.org/10.1080/01621459.1972.10481224)
+
+---
+
+## `hrecg/metrics` — heart rate, HRV and signal quality
+
+**Heart rate variability standards** (`hrv.py`, the time- and frequency-domain
+indices and the LF/HF band definitions).
+Task Force of the European Society of Cardiology and the North American
+Society of Pacing and Electrophysiology. Heart rate variability: standards of
+measurement, physiological interpretation, and clinical use.
+*Circulation*. 1996;93(5):1043–1065.
+DOI: [10.1161/01.CIR.93.5.1043](https://doi.org/10.1161/01.CIR.93.5.1043)
+
+**Lomb–Scargle periodogram** (`frequency_domain` in `hrv.py`, spectral
+analysis of the unevenly-sampled RR series without resampling).
+Lomb NR. Least-squares frequency analysis of unequally spaced data.
+*Astrophysics and Space Science*. 1976;39(2):447–462.
+DOI: [10.1007/BF00648343](https://doi.org/10.1007/BF00648343)
+
+Scargle JD. Studies in astronomical time series analysis. II. Statistical
+aspects of spectral analysis of unevenly spaced data.
+*The Astrophysical Journal*. 1982;263:835–853.
+DOI: [10.1086/160554](https://doi.org/10.1086/160554)
+
+**Poincaré plot analysis** (`poincare` in `hrv.py`, the SD1/SD2 descriptors
+used to characterise atrial fibrillation).
+Brennan M, Palaniswami M, Kamen P. Do existing measures of Poincaré plot
+geometry reflect nonlinear features of heart rate variability?
+*IEEE Transactions on Biomedical Engineering*. 2001;48(11):1342–1347.
+DOI: [10.1109/10.959330](https://doi.org/10.1109/10.959330)
+
+**Bland–Altman method comparison** (`bland_altman` in `metrics/hr.py`).
+Bland JM, Altman DG. Statistical methods for assessing agreement between two
+methods of clinical measurement. *The Lancet*. 1986;327(8476):307–310.
+DOI: [10.1016/S0140-6736(86)90837-8](https://doi.org/10.1016/S0140-6736%2886%2990837-8)
+
+**Intraclass correlation coefficient** (`icc21` in `metrics/hr.py`, the
+ICC(2,1) two-way random-effects form).
+Shrout PE, Fleiss JL. Intraclass correlations: uses in assessing rater
+reliability. *Psychological Bulletin*. 1979;86(2):420–428.
+DOI: [10.1037/0033-2909.86.2.420](https://doi.org/10.1037/0033-2909.86.2.420)
+
+**Signal quality indices** (`quality.py`, the classical kSQI, sSQI, pSQI,
+baSQI baseline indices that `uSQI` is compared against).
+Li Q, Mark RG, Clifford GD. Robust heart rate estimation from multiple
+asynchronous noisy sources using signal quality indices and a Kalman filter.
+*Physiological Measurement*. 2008;29(1):15–32.
+DOI: [10.1088/0967-3334/29/1/002](https://doi.org/10.1088/0967-3334/29/1/002)
+
+Behar J, Oster J, Li Q, Clifford GD. ECG signal quality during arrhythmia and
+its application to false alarm reduction.
+*IEEE Transactions on Biomedical Engineering*. 2013;60(6):1660–1666.
+DOI: [10.1109/TBME.2013.2240452](https://doi.org/10.1109/TBME.2013.2240452)
+
+**AAMI EC13 / ANSI heart-rate accuracy standard** (the 10%-or-5-bpm tolerance
+used throughout `metrics/hr.py` and the evaluation scripts).
+Association for the Advancement of Medical Instrumentation.
+ANSI/AAMI EC13:2002 — Cardiac monitors, heart rate meters, and alarms.
+Arlington, VA: AAMI, 2002.
+
+**AAMI EC57 / recommended practice for arrhythmia-detector testing** (basis
+for excluding paced records and for the record-disjoint calibration/test
+split used in `scripts/evaluate_mitdb.py`).
+Association for the Advancement of Medical Instrumentation.
+ANSI/AAMI EC57:2012 — Testing and reporting performance results of cardiac
+rhythm and ST-segment measurement algorithms. Arlington, VA: AAMI, 2012.
+
+---
+
+## Software this project depends on
+
+NumPy — Harris CR, et al. Array programming with NumPy. *Nature*.
+2020;585:357–362. DOI: [10.1038/s41586-020-2649-2](https://doi.org/10.1038/s41586-020-2649-2)
+
+SciPy — Virtanen P, et al. SciPy 1.0: fundamental algorithms for scientific
+computing in Python. *Nature Methods*. 2020;17:261–272.
+DOI: [10.1038/s41592-019-0686-2](https://doi.org/10.1038/s41592-019-0686-2)
+
+PyTorch — Paszke A, et al. PyTorch: an imperative style, high-performance deep
+learning library. *NeurIPS* 2019;32. arXiv: [1912.01703](https://arxiv.org/abs/1912.01703)
+
+`wfdb-python` — Xie et al. Waveform Database Software Package (WFDB) for
+Python. [github.com/MIT-LCP/wfdb-python](https://github.com/MIT-LCP/wfdb-python)
+
+Matplotlib — Hunter JD. Matplotlib: a 2D graphics environment.
+*Computing in Science & Engineering*. 2007;9(3):90–95.
+DOI: [10.1109/MCSE.2007.55](https://doi.org/10.1109/MCSE.2007.55)
+
 cleared or approved by any regulatory authority, and must not be used to diagnose,
 treat, or make clinical decisions about any person.
 
